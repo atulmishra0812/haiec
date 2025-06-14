@@ -1,0 +1,10 @@
+{{ define "main" }}
+  {{ if eq .Type "login" }}
+    {{ partial "login.html" . }}
+  {{ else }}
+    <article class="pa3 pa4-ns nested-copy-line-height">
+      <h1>{{ .Title }}</h1>
+      {{ .Content }}
+    </article>
+  {{ end }}
+{{ end }}
