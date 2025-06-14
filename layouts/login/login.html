@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAIEC - Login</title>
+    <link rel="stylesheet" href="{{ `css/style.css` | relURL }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-container">
+            <img src="{{ `HAIEC_logo.png` | relURL }}" alt="HAIEC Logo" class="header-logo">
+        </div>
+    </div>
+
+    <div class="login-container">
+        <h2>HAIEC - Login</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Username (Email)" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="login-btn">Sign In</button>
+                <button type="button" class="signup-btn">Sign Up</button>
+            </div>
+        </form>
+        <div id="login-message"></div>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://pwdraluwvlcbyqgivjhu.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZHJhbHV3dmxjYnlxZ2l2amh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MTQwNTcsImV4cCI6MjA2NDQ5MDA1N30.r7f_sgAzisMvIHHsOcw4ezkNWDoEatCS3cmR5tyib98';
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // Login handler
+        document.getElementById('login-form').onsubmit = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('login-message');
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ 
+                    email, 
+                    password 
+                });
+                
+                if (error) throw error;
+                
+                msgDiv.textContent = 'Login successful!';
+                msgDiv.style.color = 'green';
+                
+                // Redirect after successful login (optional)
+                setTimeout(() => {
+                    window.location.href = '/dashboard/';
+                }, 1000);
+                
+            } catch (error) {
+                msgDiv.textContent = 'Login failed: ' + error.message;
+                msgDiv.style.color = 'red';
+                console.error('Login error:', error);
+            }
+        };
+
+        // Signup handler with improved error handling
+        document.getElementById('signup-btn').onclick = async function() {
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('login-message');
+            
+            try {
+                if (!email || !password) {
+                    throw new Error('Please enter both email and password');
+                }
+
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        emailRedirectTo: `${window.location.origin}/login/`,
+                        data: {
+                            signed_up_at: new Date().toISOString()
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                if (data?.user?.identities?.length === 0) {
+                    msgDiv.textContent = 'Email already registered. Please try logging in.';
+                    msgDiv.style.color = 'orange';
+                } else {
+                    msgDiv.textContent = 'Sign up successful! Please check your email (including spam folder) to confirm.';
+                    msgDiv.style.color = 'green';
+                    console.log('Signup successful:', data);
+                }
+
+            } catch (error) {
+                msgDiv.textContent = 'Sign up failed: ' + error.message;
+                msgDiv.style.color = 'red';
+                console.error('Signup error:', error);
+            }
+        };
+    </script>
+</body>
+</html>

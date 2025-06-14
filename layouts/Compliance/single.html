@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="{{ `css/style.css` | relURL }}">
+</head>
+<body>
+    <div class="compliance-header">
+        <div class="header-left">
+            <img src="{{ `HAIEC_logo.png` | relURL }}" alt="HAIEC Logo" class="compliance-logo">
+            <h1 class="compliance-title">{{ .Title }}</h1>
+        </div>
+    </div>
+
+    <div class="compliance-content">
+        <div class="chat-container">
+            <div class="chat-sidebar">
+                <button class="back-btn" onclick="location.href='/dashboard'">
+                    ← Back to Dashboard
+                </button>
+            </div>
+            <div class="chat-main">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input">
+                    <input type="text" id="userInput" placeholder="Ask about {{ .Title }}...">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ partial "compliance-scripts.html" . }}
+</body>
+</html>

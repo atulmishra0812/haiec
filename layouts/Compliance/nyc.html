@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NYC HR AI Compliance Assistant</title>
+    <link rel="stylesheet" href="{{ `css/style.css` | relURL }}">
+</head>
+<body>
+    <!-- Compliance-specific header -->
+    <div class="compliance-header">
+        <div class="header-left">
+            <img src="{{ `HAIEC_logo.png` | relURL }}" alt="HAIEC Logo" class="compliance-logo">
+            <h1 class="compliance-title">NYC HR AI Compliance Assistant</h1>
+        </div>
+                <button class="back-btn-header" onclick="location.href='/dashboard/'">
+            ← Back to Dashboard
+                </button>
+    </div>
+
+    <!-- Assistant page content -->
+    <div class="compliance-content">
+        <div class="chat-container">
+            <div class="chat-sidebar">
+                <button class="back-btn" onclick="location.href='/dashboard/'">
+                    ← Back to Dashboard
+                </button>
+            </div>
+            <div class="chat-main">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input">
+                    <input type="text" id="userInput" placeholder="Ask about NYC HR AI compliance...">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseClient = supabase.createClient(
+            'https://pwdraluwvlcbyqgivjhu.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZHJhbHV3dmxjYnlxZ2l2amh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MTQwNTcsImV4cCI6MjA2NDQ5MDA1N30.r7f_sgAzisMvIHHsOcw4ezkNWDoEatCS3cmR5tyib98'
+        );
+
+        async function checkAuth() {
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+            if (!user) window.location.href = "/login/";
+        }
+
+        function addMessage(sender, text) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${text}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage('user', message);
+            input.value = '';
+
+            // Add your AI response logic here for NYC compliance
+            const response = `This is a response about NYC HR AI compliance requirements.`;
+            addMessage('system', response);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            // Add event listener for Enter key
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+
+            // Welcome message
+            addMessage('system', 'Welcome to NYC HR AI Compliance Assistant. How can I help you?');
+        });
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = "/login/";
+        }
+    </script>
+</body>
+</html>

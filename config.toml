@@ -1,0 +1,37 @@
+title = "HAIEC Site"
+baseURL = "http://localhost:1313/"
+languageCode = "en-us"
+theme = "ananke"
+
+[params]
+  logo = "haiec-logo.png"
+  description = "Welcome to the HAIEC site. Please log in to continue."
+
+[[menu.main]]
+  name = "Login"
+  url = "/login/"
+  weight = 1
+
+[[menu.main]]
+  name = "Dashboard"
+  url = "/dashboard/"
+  weight = 2
+
+[permalinks]
+  compliance = "/compliance/:filename/"
+
+[outputs]
+  home = ["HTML"]
+  section = ["HTML"]
+  page = ["HTML"]
+
+[build]
+  writeStats = false
+
+[server]
+  port = 1313
+  watch = true
+
+[security]
+  [security.funcs]
+    getenv = ["^HUGO_", "^SUPABASE_"]
