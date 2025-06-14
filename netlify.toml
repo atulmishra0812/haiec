@@ -1,15 +1,20 @@
 [build]
   publish = "public"
-  command = "hugo"
+  command = "hugo --gc --minify"
 
 [build.environment]
-  HUGO_VERSION = "0.147.6"  # Use your Hugo version
-
-[context.production.environment]
-  HUGO_ENV = "production"
+  HUGO_VERSION = "0.121.0"
   HUGO_ENABLEGITINFO = "true"
+
+[[redirects]]
+  from = "/*"
+  to = "/login/"
+  status = 200
+  force = true
+  conditions = {Role = ["anonymous"]}
 
 [[redirects]]
   from = "/"
   to = "/login/"
   status = 302
+  force = true

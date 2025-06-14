@@ -20,6 +20,12 @@ theme = "ananke"
 [permalinks]
   compliance = "/compliance/:filename/"
 
+[[redirects]]
+  from = "/"
+  to = "/login/"
+  status = 302
+  force = true
+
 [outputs]
   home = ["HTML"]
   section = ["HTML"]
