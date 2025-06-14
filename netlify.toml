@@ -13,11 +13,8 @@
   status = 302
   force = true
 
-[[redirects]]
-  from = "/*"
-  to = "/login/index.html"
-  status = 200
-  conditions = {Role = ["anonymous"]}
+[context.production]
+  command = "hugo --gc --minify -b $URL"
 
-[context.production.environment]
-  HUGO_BASEURL = "https://dulcet-fenglisu-848718.netlify.app/"
+[context.deploy-preview]
+  command = "hugo --gc --minify -b $DEPLOY_URL"

@@ -1,5 +1,7 @@
 ---
-title: "HAIEC - Login"
+title: "HAIEC Login"
+date: 2024-06-14
 type: "login"
 layout: "login"
+url: "/login"
 ---
