@@ -762,7 +762,59 @@ h2 {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+/* Compliance Header Improvements */
+.compliance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 2rem;
+    background: #8B4513;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 80px;
+}
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.compliance-logo {
+    height: 60px; /* Reduced from 80px for better alignment */
+    width: auto;
+    object-fit: contain;
+}
+
+.compliance-title {
+    color: white;
+    font-size: 24px; /* Reduced from 28px */
+    margin: 0;
+    font-weight: bold;
+}
+
+.back-btn-header {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn-header:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
 /* Main Container Layout - Updated widths */
 .main-container {
     display: flex;
