@@ -4,59 +4,230 @@
     <meta charset="UTF-8">
     <title>NYC HR AI Compliance Assistant</title>
     <link rel="stylesheet" href="{{ `css/style.css` | relURL }}">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Compliance-specific header -->
+    <!-- Header Section -->
     <div class="compliance-header">
         <div class="header-left">
             <img src="{{ `HAIEC_logo.png` | relURL }}" alt="HAIEC Logo" class="compliance-logo">
             <h1 class="compliance-title">NYC HR AI Compliance Assistant</h1>
         </div>
-                <button class="back-btn-header" onclick="location.href='/dashboard/'">
+        <button class="back-btn-header" onclick="location.href='/dashboard/'">
             ← Back to Dashboard
-                </button>
+        </button>
     </div>
 
-    <!-- Assistant page content -->
-    <div class="compliance-content">
-        <div class="chat-container">
-            <div class="chat-sidebar">
-                <button class="back-btn" onclick="location.href='/dashboard/'">
-                    ← Back to Dashboard
-                </button>
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Document Management Section -->
+        <div class="docs-section">
+            <div class="section-container">
+                <h2>Required Documents</h2>
+                <div class="document-requirements">
+                    <h3>NYC Local Law 144 Requirements:</h3>
+                    <ul>
+                        <li>📄 Bias Audit Report</li>
+                        <li>📊 Impact Assessment</li>
+                        <li>📢 Public Notice</li>
+                    </ul>
+                </div>
+
+                <div class="upload-container">
+                    <h3>Upload New Document</h3>
+                    <form id="upload-form" class="upload-form">
+                        <div class="form-group">
+                            <label for="docType">Document Type*</label>
+                            <select id="docType" required>
+                                <option value="">Select document type...</option>
+                                <option value="bias_audit">Bias Audit Report</option>
+                                <option value="impact_assessment">Impact Assessment</option>
+                                <option value="public_notice">Public Notice</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="docFile">Upload Document (PDF only)*</label>
+                            <input type="file" id="docFile" accept=".pdf" required>
+                            <small class="file-hint">Maximum size: 10MB</small>
+                        </div>
+                        <button type="submit" class="upload-btn">Upload Document</button>
+                    </form>
+                    <div id="upload-status"></div>
+                </div>
+
+                <div id="documents-list" class="documents-list">
+                    <h3>Your Uploaded Documents</h3>
+                    <div id="docs-container"></div>
+                </div>
             </div>
-            <div class="chat-main">
+        </div>
+
+        <!-- Chat Assistant Section -->
+        <div class="chat-section">
+            <div class="chat-container">
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input">
-                    <input type="text" id="userInput" placeholder="Ask about NYC HR AI compliance...">
-                    <button onclick="sendMessage()">Send</button>
+                    <textarea 
+                        id="userInput" 
+                        placeholder="Ask about NYC HR AI compliance..."
+                        rows="3"
+                    ></textarea>
+                    <button onclick="sendMessage()" class="send-btn">Send</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Initialize Supabase Client
         const supabaseClient = supabase.createClient(
             'https://pwdraluwvlcbyqgivjhu.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZHJhbHV3dmxjYnlxZ2l2amh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MTQwNTcsImV4cCI6MjA2NDQ5MDA1N30.r7f_sgAzisMvIHHsOcw4ezkNWDoEatCS3cmR5tyib98'
         );
 
+        // Authentication Check
         async function checkAuth() {
             const { data: { user }, error } = await supabaseClient.auth.getUser();
-            if (!user) window.location.href = "/login/";
+            if (!user) {
+                window.location.href = "/login/";
+                return false;
+            }
+            return user;
         }
 
-        function addMessage(sender, text) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI'}:</strong> ${text}`;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // File Upload Handling
+        document.getElementById('upload-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const file = document.getElementById('docFile').files[0];
+            const docType = document.getElementById('docType').value;
+            const statusDiv = document.getElementById('upload-status');
+
+            try {
+                if (!validateFile(file)) return;
+                
+                statusDiv.innerHTML = '<p class="status-info">Uploading...</p>';
+                const user = await checkAuth();
+                
+                const fileName = `${Date.now()}_${file.name}`;
+                const filePath = `nyc-compliance/${user.id}/${docType}/${fileName}`;
+
+                // Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await supabaseClient
+                    .storage
+                    .from('compliance-docs')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                // Record in database
+                const { error: dbError } = await supabaseClient
+                    .from('compliance_documents')
+                    .insert([{
+                        user_id: user.id,
+                        compliance_type: 'nyc_hr_ai',
+                        document_type: docType,
+                        file_path: filePath,
+                        status: 'pending_review'
+                    }]);
+
+                if (dbError) throw dbError;
+
+                statusDiv.innerHTML = '<p class="status-success">Document uploaded successfully!</p>';
+                loadDocuments();
+                this.reset();
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                statusDiv.innerHTML = `<p class="status-error">Upload failed: ${error.message}</p>`;
+            }
+        });
+
+        // File Validation
+        function validateFile(file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            
+            if (!file) {
+                showStatus('Please select a file', 'error');
+                return false;
+            }
+            
+            if (file.type !== 'application/pdf') {
+                showStatus('Please upload a PDF file', 'error');
+                return false;
+            }
+            
+            if (file.size > maxSize) {
+                showStatus('File size must be less than 10MB', 'error');
+                return false;
+            }
+            
+            return true;
         }
 
+        // Status Message Handler
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('upload-status');
+            statusDiv.innerHTML = `<p class="status-${type}">${message}</p>`;
+        }
+
+        // Load Documents
+        async function loadDocuments() {
+            const container = document.getElementById('docs-container');
+            try {
+                const user = await checkAuth();
+                const { data: documents, error } = await supabaseClient
+                    .from('compliance_documents')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('compliance_type', 'nyc_hr_ai')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                container.innerHTML = documents.length ? '' : '<p>No documents uploaded yet.</p>';
+                
+                documents.forEach(doc => {
+                    container.innerHTML += `
+                        <div class="doc-item">
+                            <div class="doc-info">
+                                <span class="doc-type">${formatDocType(doc.document_type)}</span>
+                                <span class="doc-date">${new Date(doc.created_at).toLocaleDateString()}</span>
+                                <span class="doc-status">${formatStatus(doc.status)}</span>
+                            </div>
+                            <div class="doc-actions">
+                                <button onclick="viewDocument('${doc.file_path}')" class="action-btn view">View</button>
+                                <button onclick="deleteDocument('${doc.id}')" class="action-btn delete">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                container.innerHTML = '<p class="error">Error loading documents</p>';
+            }
+        }
+
+        // Format Document Type
+        function formatDocType(type) {
+            const types = {
+                bias_audit: 'Bias Audit Report',
+                impact_assessment: 'Impact Assessment',
+                public_notice: 'Public Notice'
+            };
+            return types[type] || type;
+        }
+
+        // Format Status
+        function formatStatus(status) {
+            const statusClasses = {
+                pending_review: 'pending',
+                approved: 'success',
+                rejected: 'error'
+            };
+            return `<span class="status ${statusClasses[status]}">${status.replace('_', ' ')}</span>`;
+        }
+
+        // Chat Message Handler
         async function sendMessage() {
             const input = document.getElementById('userInput');
             const message = input.value.trim();
@@ -65,33 +236,41 @@
             addMessage('user', message);
             input.value = '';
 
-            // Add your AI response logic here for NYC compliance
-            const response = `This is a response about NYC HR AI compliance requirements.`;
-            addMessage('system', response);
+            // TODO: Implement AI response logic
+            const response = await getAIResponse(message);
+            addMessage('assistant', response);
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
-            
-            // Add event listener for Enter key
-            const userInput = document.getElementById('userInput');
-            if (userInput) {
-                userInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        sendMessage();
-                    }
-                });
+        // Add Message to Chat
+        function addMessage(sender, text) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <span class="sender">${sender === 'user' ? 'You' : 'AI Assistant'}</span>
+                    <p>${text}</p>
+                </div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Initialize Page
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (await checkAuth()) {
+                loadDocuments();
+                addMessage('assistant', 'Welcome to NYC HR AI Compliance Assistant. How can I help you today?');
             }
-
-            // Welcome message
-            addMessage('system', 'Welcome to NYC HR AI Compliance Assistant. How can I help you?');
+            
+            // Handle Enter key in textarea
+            document.getElementById('userInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
         });
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = "/login/";
-        }
     </script>
 </body>
 </html>
