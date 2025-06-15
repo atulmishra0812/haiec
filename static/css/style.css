@@ -860,3 +860,105 @@ h2 {
     left: 0;
     color: #8B4513;
 }
+
+/* Compliance Page Specific Styles */
+.compliance-page {
+    display: flex;
+    min-height: 100vh;
+    padding-top: 80px; /* Account for fixed header */
+}
+
+/* Update Dashboard Header for Compliance */
+.dashboard-header.compliance {
+    background: #8B4513;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Add breadcrumb navigation */
+.compliance-breadcrumb {
+    background: white;
+    padding: 10px 20px;
+    border-bottom: 1px solid #dee2e6;
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.compliance-breadcrumb a {
+    color: #8B4513;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.compliance-breadcrumb span {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* Adjust main container for compliance pages */
+.compliance-container {
+    display: flex;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 40px auto 20px;
+    padding: 0 20px;
+    width: 100%;
+}
+
+/* Adjust chat section margins for compliance */
+.chat-section.compliance {
+    margin-top: 40px;
+}
+
+/* Make layout more compact for compliance pages */
+.compliance-layout {
+    gap: 15px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 1200px) {
+    .compliance-container {
+        flex-direction: column;
+    }
+
+    .docs-section,
+    .compliance-reminders {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .chat-section {
+        width: 100%;
+    }
+}
+
+/* Add status indicators for compliance items */
+.compliance-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.status-compliant {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.status-non-compliant {
+    background: #f8d7da;
+    color: #842029;
+}
