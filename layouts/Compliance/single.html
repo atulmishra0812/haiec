@@ -103,11 +103,24 @@
     </div>
 
     <script>
-        // Initialize Supabase Client
-        const supabaseClient = supabase.createClient(
-            'https://pwdraluwvlcbyqgivjhu.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZHJhbHV3dmxjYnlxZ2l2amh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MTQwNTcsImV4cCI6MjA2NDQ5MDA1N30.r7f_sgAzisMvIHHsOcw4ezkNWDoEatCS3cmR5tyib98'
-        );
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://pwdraluwvlcbyqgivjhu.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3ZHJhbHV3dmxjYnlxZ2l2amh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5MTQwNTcsImV4cCI6MjA2NDQ5MDA1N30.r7f_sgAzisMvIHHsOcw4ezkNWDoEatCS3cmR5tyib98';
+//        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // Create Supabase client with error handling
+        let supabaseClient;
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
+        } catch (error) {
+            console.error('Supabase initialization error:', error);
+        }
 
         // Authentication Check
         async function checkAuth() {
@@ -119,18 +132,26 @@
             return user;
         }
 
-        // File Upload Handling
+        // Update the file upload handler
         document.getElementById('upload-form').addEventListener('submit', async function(event) {
             event.preventDefault();
             const file = document.getElementById('docFile').files[0];
             const docType = document.getElementById('docType').value;
             const statusDiv = document.getElementById('upload-status');
 
+            if (!file || !docType) {
+                showStatus('Please select both document type and file', 'info');
+                return;
+            }
+
             try {
                 if (!validateFile(file)) return;
                 
-                statusDiv.innerHTML = '<p class="status-info">Uploading...</p>';
+                statusDiv.innerHTML = '<p class="status-info">Processing document...</p>';
                 const user = await checkAuth();
+                
+                // Extract text from PDF
+                const pdfText = await extractPDFText(file);
                 
                 const fileName = `${Date.now()}_${file.name}`;
                 const filePath = `nyc-compliance/${user.id}/${docType}/${fileName}`;
@@ -143,7 +164,7 @@
 
                 if (uploadError) throw uploadError;
 
-                // Record in database
+                // Store document and extracted text in database
                 const { error: dbError } = await supabaseClient
                     .from('compliance_documents')
                     .insert([{
@@ -151,20 +172,42 @@
                         compliance_type: 'nyc_hr_ai',
                         document_type: docType,
                         file_path: filePath,
-                        status: 'pending_review'
+                        status: 'pending_review',
+                        extracted_text: pdfText,
+                        analysis_status: 'pending'
                     }]);
 
                 if (dbError) throw dbError;
 
-                statusDiv.innerHTML = '<p class="status-success">Document uploaded successfully!</p>';
+                statusDiv.innerHTML = '<p class="status-success">Document processed successfully!</p>';
                 loadDocuments();
                 this.reset();
 
             } catch (error) {
                 console.error('Upload error:', error);
-                statusDiv.innerHTML = `<p class="status-error">Upload failed: ${error.message}</p>`;
+                statusDiv.innerHTML = `<p class="status-error">Processing failed: ${error.message}</p>`;
             }
         });
+
+        // Add PDF text extraction function
+        async function extractPDFText(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let text = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    text += content.items.map(item => item.str).join(' ') + '\n';
+                }
+                
+                return text;
+            } catch (error) {
+                console.error('PDF extraction error:', error);
+                throw new Error('Failed to extract text from PDF');
+            }
+        }
 
         // File Validation
         function validateFile(file) {
